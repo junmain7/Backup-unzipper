@@ -13,6 +13,8 @@ import ZipTab from "./components/ZipTab";
 import FilesTab from "./components/FilesTab";
 import HistoryTab from "./components/HistoryTab";
 import AccountsTab, { AddAccountModal, SwitchAccountModal, AccountsSkeleton } from "./components/AccountsTab";
+import PullToRefresh from "./components/PullToRefresh";
+import ExplorerTab from "./components/ExplorerTab";
 
 export default function ZipPusherPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -29,6 +31,7 @@ export default function ZipPusherPage() {
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const scrollRef = useRef(null);
   const menuRef = useRef();
 
   useEffect(() => { if (sessionStatus === "unauthenticated") router.push("/login"); }, [sessionStatus, router]);
@@ -106,9 +109,10 @@ export default function ZipPusherPage() {
   if (accountsLoading) return <AccountsSkeleton />;
 
   const tabs = [
-    { id: "zip", label: "ZIP Push", icon: "📦" },
-    { id: "files", label: "Files Push", icon: "🗂️" },
-    { id: "history", label: "History", icon: "📜" },
+    { id: "zip",      label: "ZIP Push",  icon: "📦" },
+    { id: "files",    label: "Files Push", icon: "🗂️" },
+    { id: "explorer", label: "Explorer",  icon: "📂" },
+    { id: "history",  label: "History",   icon: "📜" },
   ];
 
   return (
@@ -131,7 +135,8 @@ export default function ZipPusherPage() {
         handleInstallClick={handleInstallClick}
       />
       {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px", paddingBottom: "80px" }}>
+      <PullToRefresh scrollRef={scrollRef}>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "16px", paddingBottom: "80px" }}>
         {!token && activeTab !== "accounts" && (
           <div style={{ background: "#1f1207", border: "1px solid #e3b34144", borderRadius: "8px", padding: "14px", fontSize: "12px", color: "#e3b341", textAlign: "center", marginBottom: "14px" }}>
             ⚠️ Pehle <strong>Accounts</strong> tab mein ek account add karo
@@ -152,13 +157,15 @@ export default function ZipPusherPage() {
           </div>
         )}
         {activeTab === "history" && token && <HistoryTab token={token} />}
-      </div>
+        {activeTab === "explorer" && token && <ExplorerTab token={token} selectedRepo={selectedRepo} setSelectedRepo={setSelectedRepo} />}
+        </div>
+      </PullToRefresh>
 
       {/* Bottom Nav */}
       <BottomNav tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Left Sidebar drawer — Vercel env variables */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} activeAccountId={activeAccountId} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} activeAccountId={activeAccountId} token={token} />
 
       {/* Add Account Modal */}
       {showAddModal && (
